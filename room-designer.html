@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Room Designer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0b1827;
+  --grid-sm: rgba(80,160,255,0.07);
+  --grid-lg: rgba(80,160,255,0.18);
+  --room-fill: rgba(77,190,255,0.1);
+  --room-line: #4db8ff;
+  --fur-fill: rgba(255,185,70,0.14);
+  --fur-line: #ffb846;
+  --text: #cde4ff;
+  --accent: #4db8ff;
+  --panel: #060e1a;
+  --panel-border: rgba(77,184,255,0.22);
+  --del: #ff4d4d;
+  --green: #3dffc0;
+}
+
+body {
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ═══ TITLE SCREEN ═══ */
+#title-screen {
+  position: fixed;
+  inset: 0;
+  background: #060e1a;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#title-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(77,184,255,0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(77,184,255,0.1) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: gridScroll 10s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes gridScroll {
+  from { background-position: 0 0; }
+  to   { background-position: 60px 60px; }
+}
+
+#title-screen::after {
+  content: '';
+  position: absolute;
+  width: 700px; height: 700px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(77,184,255,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.ts-badge {
+  font-size: 10px;
+  letter-spacing: 0.35em;
+  color: var(--accent);
+  opacity: 0.55;
+  margin-bottom: 20px;
+  position: relative; z-index: 1;
+  animation: fadeUp 0.6s 0.1s both;
+}
+
+.ts-title {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(38px, 8vw, 88px);
+  font-weight: 900;
+  color: white;
+  letter-spacing: 0.1em;
+  text-align: center;
+  line-height: 1.05;
+  position: relative; z-index: 1;
+  animation: fadeUp 0.7s 0.25s both;
+  text-shadow: 0 0 50px rgba(77,184,255,0.45), 0 0 100px rgba(77,184,255,0.18);
+}
+
+.ts-title span { color: var(--accent); }
+
+.ts-sub {
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  opacity: 0.35;
+  margin-top: 16px;
+  position: relative; z-index: 1;
+  animation: fadeUp 0.6s 0.4s both;
+}
+
+.ts-divider {
+  width: 260px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  margin: 40px 0 36px;
+  position: relative; z-index: 1;
+  animation: fadeIn 0.6s 0.55s both;
+}
+
+.ts-buttons {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 0 20px;
+  position: relative; z-index: 1;
+  animation: fadeUp 0.6s 0.65s both;
+}
+
+.ts-btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 15px 30px;
+  cursor: pointer;
+  border: 1px solid;
+  background: transparent;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+
+.ts-btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.ts-btn:hover::before { opacity: 0.1; }
+.ts-btn:hover { transform: translateY(-2px); }
+.ts-btn:active { transform: translateY(0); }
+
+.ts-btn-primary { border-color: var(--accent); color: var(--accent); }
+.ts-btn-primary:hover { box-shadow: 0 8px 28px rgba(77,184,255,0.28); }
+
+.ts-btn-sec { border-color: var(--fur-line); color: var(--fur-line); }
+.ts-btn-sec:hover { box-shadow: 0 8px 28px rgba(255,184,70,0.22); }
+
+.ts-btn-tut { border-color: var(--green); color: var(--green); }
+.ts-btn-tut:hover { box-shadow: 0 8px 28px rgba(61,255,192,0.22); }
+
+.ts-credit {
+  position: absolute;
+  bottom: 18px; left: 22px;
+  font-size: 10px;
+  opacity: 0.28;
+  letter-spacing: 0.14em;
+  z-index: 2;
+  animation: fadeIn 1s 1.2s both;
+}
+
+.ts-hint {
+  position: absolute;
+  bottom: 18px; right: 22px;
+  font-size: 9px;
+  opacity: 0.2;
+  letter-spacing: 0.1em;
+  z-index: 2;
+  animation: fadeIn 1s 1.2s both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.ts-out { animation: tsOut 0.5s ease-in forwards; }
+@keyframes tsOut {
+  to { opacity: 0; transform: scale(0.97); pointer-events: none; }
+}
+
+/* ═══ MODAL BASE ═══ */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(6,14,26,0.88);
+  z-index: 900;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+
+.modal-box {
+  background: #0a1828;
+  border: 1px solid var(--panel-border);
+  width: min(640px, 95vw);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalIn 0.22s ease both;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.96) translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.modal-header {
+  display: flex; align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--panel-border);
+  flex-shrink: 0;
+}
+.modal-header h2 {
+  font-family: 'Orbitron', monospace;
+  font-size: 12px; color: var(--accent);
+  letter-spacing: 0.22em; font-weight: 700;
+  flex: 1;
+}
+.modal-close {
+  background: none;
+  border: 1px solid rgba(255,77,77,0.4);
+  color: #ff5555;
+  width: 26px; height: 26px;
+  cursor: pointer; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+  letter-spacing: 0; padding: 0; text-transform: none;
+  flex-shrink: 0; font-family: inherit;
+}
+.modal-close:hover { background: rgba(255,77,77,0.14); border-color: #ff4444; color: #ff4444; }
+
+.modal-body {
+  overflow-y: auto; flex: 1; padding: 22px;
+}
+.modal-body::-webkit-scrollbar { width: 4px; }
+.modal-body::-webkit-scrollbar-thumb { background: var(--panel-border); }
+
+/* ═══ TUTORIAL ═══ */
+.tut-step {
+  display: flex; gap: 16px;
+  margin-bottom: 22px; padding-bottom: 22px;
+  border-bottom: 1px solid rgba(77,184,255,0.08);
+}
+.tut-step:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+
+.tut-num {
+  width: 28px; height: 28px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; flex-shrink: 0;
+  font-family: 'Orbitron', monospace; font-weight: 700;
+}
+
+.tut-content h3 {
+  font-size: 11px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: white;
+  margin-bottom: 8px;
+}
+.tut-content p { font-size: 11px; line-height: 1.8; opacity: 0.62; }
+
+.tag {
+  display: inline-block;
+  border: 1px solid; padding: 1px 6px;
+  font-size: 9px; letter-spacing: 0.1em;
+  vertical-align: middle; margin: 0 2px;
+  text-transform: uppercase;
+}
+.tag-room { border-color: var(--room-line); color: var(--room-line); }
+.tag-fur  { border-color: var(--fur-line);  color: var(--fur-line);  }
+.tag-key  { border-color: rgba(255,255,255,0.28); color: rgba(255,255,255,0.55); }
+.tag-del  { border-color: #ff5555; color: #ff5555; }
+
+.tut-note {
+  background: rgba(77,184,255,0.06);
+  border-left: 2px solid var(--accent);
+  padding: 12px 16px; margin-top: 22px;
+  font-size: 10px; line-height: 1.75; opacity: 0.78;
+}
+
+/* ═══ TEMPLATES ═══ */
+.tmpl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+}
+.tmpl-card {
+  border: 1px solid var(--panel-border);
+  padding: 14px; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.tmpl-card:hover { border-color: var(--accent); background: rgba(77,184,255,0.05); }
+.tmpl-card h3 {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; color: white;
+  letter-spacing: 0.16em; margin-bottom: 5px;
+}
+.tmpl-card p { font-size: 9px; opacity: 0.4; letter-spacing: 0.08em; line-height: 1.6; }
+
+.tmpl-preview {
+  height: 86px; position: relative;
+  border: 1px solid rgba(77,184,255,0.1);
+  background: rgba(77,184,255,0.02);
+  margin-bottom: 12px; overflow: hidden;
+}
+.tp-room { position: absolute; border: 1px solid var(--room-line); background: rgba(77,190,255,0.07); }
+.tp-fur  { position: absolute; border: 1px solid var(--fur-line);  background: rgba(255,185,70,0.1); }
+
+/* ═══ APP SHELL ═══ */
+header {
+  display: flex; align-items: center; gap: 16px;
+  padding: 9px 18px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--panel-border);
+  flex-shrink: 0;
+}
+.logo { display: flex; flex-direction: column; gap: 2px; }
+.logo h1 {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px; letter-spacing: 0.22em;
+  color: var(--accent); font-weight: 700;
+}
+.logo span { font-size: 8px; opacity: 0.28; letter-spacing: 0.16em; }
+
+.toolbar { display: flex; gap: 8px; margin-left: auto; align-items: center; }
+.toolbar-sep { width: 1px; height: 20px; background: var(--panel-border); }
+.tlabel { font-size: 9px; opacity: 0.32; letter-spacing: 0.18em; }
+
+button {
+  font-family: 'Share Tech Mono', monospace;
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  padding: 5px 12px;
+  font-size: 10px; cursor: pointer;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+button:hover { background: rgba(77,184,255,0.09); border-color: var(--accent); color: var(--accent); }
+.btn-room { border-color: var(--room-line); color: var(--room-line); }
+.btn-room:hover { background: rgba(77,190,255,0.09); border-color: var(--room-line); color: var(--room-line); }
+.btn-fur  { border-color: var(--fur-line);  color: var(--fur-line); }
+.btn-fur:hover  { background: rgba(255,185,70,0.09);  border-color: var(--fur-line);  color: var(--fur-line); }
+.btn-clear { border-color: #ff5555; color: #ff5555; }
+.btn-clear:hover { background: rgba(255,85,85,0.08); border-color: #ff5555; color: #ff5555; }
+
+/* CANVAS */
+.canvas-wrap { flex: 1; position: relative; overflow: hidden; }
+#canvas {
+  width: 100%; height: 100%;
+  position: relative; cursor: default;
+  background-image:
+    linear-gradient(var(--grid-lg) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-lg) 1px, transparent 1px),
+    linear-gradient(var(--grid-sm) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-sm) 1px, transparent 1px);
+  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+}
+
+/* BOXES */
+.box { position: absolute; user-select: none; cursor: move; }
+.box-inner {
+  width: 100%; height: 100%; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 4px; transition: box-shadow 0.15s;
+}
+.box.room .box-inner      { background: var(--room-fill); border: 2px solid var(--room-line); }
+.box.furniture .box-inner { background: var(--fur-fill);  border: 2px solid var(--fur-line); }
+.box.selected .box-inner  { box-shadow: 0 0 0 2px rgba(255,255,255,0.28); }
+
+.box-name {
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  cursor: text; text-align: center; max-width: 90%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.box.room .box-name      { color: var(--room-line); }
+.box.furniture .box-name { color: var(--fur-line); }
+.box-size { font-size: 9px; opacity: 0.42; letter-spacing: 0.07em; }
+
+.rh {
+  position: absolute; width: 10px; height: 10px;
+  background: white; border: 1px solid #000; z-index: 5;
+  opacity: 0; transition: opacity 0.15s;
+}
+.box.selected .rh { opacity: 1; }
+.rh.nw { top:-5px; left:-5px; cursor:nw-resize; }
+.rh.ne { top:-5px; right:-5px; cursor:ne-resize; }
+.rh.sw { bottom:-5px; left:-5px; cursor:sw-resize; }
+.rh.se { bottom:-5px; right:-5px; cursor:se-resize; }
+
+.dim-w, .dim-h {
+  position: absolute; display: none;
+  align-items: center; justify-content: center; pointer-events: none;
+}
+.box.selected .dim-w, .box.selected .dim-h { display: flex; }
+.dim-w { bottom:-22px; left:0; right:0; height:18px; }
+.dim-h { right:-50px; top:0; bottom:0; width:50px; flex-direction:column; }
+.dim-w::before { content:''; position:absolute; height:1px; left:0; right:0; top:50%; background:rgba(255,255,255,0.18); }
+.dim-h::before { content:''; position:absolute; width:1px; top:0; bottom:0; left:50%; background:rgba(255,255,255,0.18); }
+.dim-w-label, .dim-h-label {
+  font-size:9px; color:rgba(255,255,255,0.38); background:var(--bg);
+  padding:0 3px; position:relative; z-index:1; letter-spacing:0.05em;
+}
+
+.del-btn {
+  position:absolute; top:-11px; right:-11px; width:20px; height:20px;
+  background:var(--del); border:none; color:white; font-size:11px; padding:0;
+  cursor:pointer; display:none; align-items:center; justify-content:center;
+  z-index:10; letter-spacing:0; line-height:1; border-radius:0; font-family:inherit;
+}
+.box.selected .del-btn { display:flex; }
+.del-btn:hover { background:#ff2020; }
+
+/* TOOLTIP */
+#tip {
+  position:fixed; display:none;
+  background:var(--panel); border:1px solid var(--panel-border);
+  padding:10px 14px; font-size:10px;
+  pointer-events:none; z-index:999; min-width:190px; line-height:1;
+}
+.tip-title { color:var(--accent); font-size:9px; letter-spacing:0.2em; text-transform:uppercase; padding-bottom:6px; margin-bottom:6px; border-bottom:1px solid var(--panel-border); }
+.tip-row { display:flex; justify-content:space-between; gap:16px; margin-bottom:4px; }
+.tip-row:last-child { margin-bottom:0; }
+.tip-key { opacity:0.38; }
+.tip-val { color:white; }
+
+/* FOOTER */
+footer {
+  display: flex; align-items: center;
+  padding: 5px 18px;
+  background: var(--panel);
+  border-top: 1px solid var(--panel-border);
+  flex-shrink: 0; gap: 12px;
+}
+#status { font-size: 9px; opacity: 0.38; letter-spacing: 0.09em; flex: 1; }
+.footer-credit { font-size: 9px; opacity: 0.25; letter-spacing: 0.13em; flex-shrink: 0; }
+
+.dot { display:inline-block; width:8px; height:8px; margin-right:4px; border:1px solid; vertical-align:middle; }
+.dot.r { border-color:var(--room-line); background:var(--room-fill); }
+.dot.f { border-color:var(--fur-line);  background:var(--fur-fill); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ TITLE SCREEN ═══════════ -->
+<div id="title-screen">
+  <div class="ts-badge">⬛ BLUEPRINT EDITION</div>
+  <div class="ts-title">ROOM<br><span>DESIGNER</span></div>
+  <div class="ts-sub">PLAN · MEASURE · ARRANGE</div>
+  <div class="ts-divider"></div>
+  <div class="ts-buttons">
+    <button class="ts-btn ts-btn-primary" onclick="startNew()">⊕ Create New Layout</button>
+    <button class="ts-btn ts-btn-sec"     onclick="openTemplates()">⊞ Templates</button>
+    <button class="ts-btn ts-btn-tut"     onclick="openTutorial()">? Tutorial</button>
+  </div>
+  <div class="ts-credit">Created By: Cookey</div>
+  <div class="ts-hint">1 GRID CELL = 10 CM</div>
+</div>
+
+<!-- ═══════════ TUTORIAL MODAL ═══════════ -->
+<div class="modal-overlay" id="tut-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>📖 HOW TO USE</h2>
+      <button class="modal-close" onclick="closeModal('tut-overlay')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="tut-step">
+        <div class="tut-num">1</div>
+        <div class="tut-content">
+          <h3>What Is a Room Box?</h3>
+          <p>
+            A <span class="tag tag-room">Room</span> box represents the four walls of a real room, like your bedroom or kitchen.
+            Think of it as looking at the room from above, like a map.
+            Click <span class="tag tag-key">+ Room</span> in the top bar to add one.
+          </p>
+        </div>
+      </div>
+
+      <div class="tut-step">
+        <div class="tut-num">2</div>
+        <div class="tut-content">
+          <h3>What Is a Furniture Box?</h3>
+          <p>
+            A <span class="tag tag-fur">Furniture</span> box is any object in the room — a bed, a desk, a couch, a table, etc.
+            Drag these inside your room box to plan out where everything goes.
+            Click <span class="tag tag-key">+ Furniture</span> to add one.
+          </p>
+        </div>
+      </div>
+
+      <div class="tut-step">
+        <div class="tut-num">3</div>
+        <div class="tut-content">
+          <h3>Moving Things Around</h3>
+          <p>
+            Click any box to select it. Then <strong>click and drag</strong> it to move it around the canvas.
+            Everything snaps to the grid automatically, so things stay neatly aligned.
+          </p>
+        </div>
+      </div>
+
+      <div class="tut-step">
+        <div class="tut-num">4</div>
+        <div class="tut-content">
+          <h3>Making a Box Bigger or Smaller</h3>
+          <p>
+            When a box is selected, four small white squares appear at the corners.
+            <strong>Drag any corner square</strong> to resize the box.
+            The size shown inside updates live so you always know the real-world measurement.
+          </p>
+        </div>
+      </div>
+
+      <div class="tut-step">
+        <div class="tut-num">5</div>
+        <div class="tut-content">
+          <h3>Renaming a Box</h3>
+          <p>
+            <strong>Double-click the label text</strong> inside any box.
+            A text field appears — type your new name, then press
+            <span class="tag tag-key">Enter</span> or click somewhere else to save it.
+            Great for labeling things like "My Bed" or "Bookshelf."
+          </p>
+        </div>
+      </div>
+
+      <div class="tut-step">
+        <div class="tut-num">6</div>
+        <div class="tut-content">
+          <h3>Checking the Measurements</h3>
+          <p>
+            <strong>Hover your mouse over any box</strong> to see a popup showing the size in every unit:
+            pixels, centimeters, meters, inches, feet, and feet+inches.
+            The app scale is <strong>1 grid cell = 10 cm</strong>, so you can use real room sizes.
+          </p>
+        </div>
+      </div>
+
+      <div class="tut-step">
+        <div class="tut-num">7</div>
+        <div class="tut-content">
+          <h3>Deleting a Box</h3>
+          <p>
+            Select a box and a small <span class="tag tag-del">✕</span> button appears in the top-right corner of it.
+            Click it to delete that one box. To wipe everything at once, use the
+            <span class="tag tag-del">✕ Clear</span> button in the toolbar at the top.
+            You can also press <span class="tag tag-key">Delete</span> on your keyboard after selecting a box.
+          </p>
+        </div>
+      </div>
+
+      <div class="tut-note">
+        💡 <strong>Pro tip:</strong> Start by adding a Room box and resizing it to match your actual room.
+        Then add Furniture boxes inside it and resize each one to match your real furniture dimensions.
+        Hover any box to double-check the measurements match up in the units you prefer!
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ TEMPLATES MODAL ═══════════ -->
+<div class="modal-overlay" id="tmpl-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>⊞ CHOOSE A TEMPLATE</h2>
+      <button class="modal-close" onclick="closeModal('tmpl-overlay')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="tmpl-grid">
+
+        <div class="tmpl-card" onclick="loadTemplate('bedroom')">
+          <div class="tmpl-preview">
+            <div class="tp-room" style="inset:6px"></div>
+            <div class="tp-fur" style="top:12px;left:12px;width:58px;height:36px"></div>
+            <div class="tp-fur" style="top:12px;right:12px;width:28px;height:36px"></div>
+            <div class="tp-fur" style="bottom:12px;left:12px;width:44px;height:26px"></div>
+            <div class="tp-fur" style="bottom:12px;right:14px;width:48px;height:16px"></div>
+          </div>
+          <h3>Bedroom</h3>
+          <p>Bed · Wardrobe · Desk · Nightstand</p>
+        </div>
+
+        <div class="tmpl-card" onclick="loadTemplate('living')">
+          <div class="tmpl-preview">
+            <div class="tp-room" style="inset:6px"></div>
+            <div class="tp-fur" style="top:12px;left:12px;right:12px;height:20px"></div>
+            <div class="tp-fur" style="top:40px;left:22px;width:48px;height:12px"></div>
+            <div class="tp-fur" style="bottom:12px;right:12px;width:34px;height:30px"></div>
+          </div>
+          <h3>Living Room</h3>
+          <p>Sofa · Coffee Table · TV Unit</p>
+        </div>
+
+        <div class="tmpl-card" onclick="loadTemplate('kitchen')">
+          <div class="tmpl-preview">
+            <div class="tp-room" style="inset:6px"></div>
+            <div class="tp-fur" style="top:12px;left:12px;right:12px;height:18px"></div>
+            <div class="tp-fur" style="top:38px;left:20px;width:32px;height:30px"></div>
+            <div class="tp-fur" style="bottom:12px;left:12px;width:18px;height:30px"></div>
+            <div class="tp-fur" style="bottom:12px;right:12px;width:18px;height:30px"></div>
+          </div>
+          <h3>Kitchen</h3>
+          <p>Counter · Table · Fridge · Chairs</p>
+        </div>
+
+        <div class="tmpl-card" onclick="loadTemplate('office')">
+          <div class="tmpl-preview">
+            <div class="tp-room" style="inset:6px"></div>
+            <div class="tp-fur" style="top:12px;left:12px;width:62px;height:28px"></div>
+            <div class="tp-fur" style="top:14px;right:12px;width:16px;height:58px"></div>
+            <div class="tp-fur" style="bottom:12px;left:30px;width:26px;height:20px"></div>
+          </div>
+          <h3>Home Office</h3>
+          <p>Desk · Bookshelf · Chair</p>
+        </div>
+
+        <div class="tmpl-card" onclick="loadTemplate('blank')">
+          <div class="tmpl-preview" style="display:flex;align-items:center;justify-content:center;">
+            <span style="font-size:32px;opacity:0.18;font-family:'Orbitron',monospace">+</span>
+          </div>
+          <h3>Blank Canvas</h3>
+          <p>Start completely from scratch</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ APP SHELL ═══════════ -->
+<header>
+  <div class="logo">
+    <h1>⬛ ROOM DESIGNER</h1>
+    <span>BLUEPRINT EDITION · 1 CELL = 10 CM</span>
+  </div>
+  <div class="toolbar">
+    <span class="tlabel">ADD</span>
+    <button class="btn-room" onclick="addBox('room')">+ Room</button>
+    <button class="btn-fur"  onclick="addBox('furniture')">+ Furniture</button>
+    <div class="toolbar-sep"></div>
+    <button onclick="openTutorial()">? Help</button>
+    <button onclick="openTemplates()">⊞ Templates</button>
+    <div class="toolbar-sep"></div>
+    <button class="btn-clear" onclick="clearAll()">✕ Clear</button>
+  </div>
+</header>
+
+<div class="canvas-wrap">
+  <div id="canvas"></div>
+</div>
+
+<footer>
+  <div id="status">
+    <span class="dot r"></span>ROOM &nbsp;
+    <span class="dot f"></span>FURNITURE &nbsp;·&nbsp;
+    DRAG TO MOVE &nbsp;·&nbsp; CORNER HANDLE TO RESIZE &nbsp;·&nbsp;
+    HOVER FOR ALL UNITS &nbsp;·&nbsp; DOUBLE-CLICK NAME TO RENAME
+  </div>
+  <div class="footer-credit">Created By: Cookey</div>
+</footer>
+
+<div id="tip"></div>
+
+<script>
+// ── SCALE ──
+const GRID = 20;
+const PX_CM = 10 / GRID;
+const pxToCm = p => p * PX_CM;
+const pxToM  = p => pxToCm(p) / 100;
+const pxToFt = p => pxToCm(p) / 30.48;
+const pxToIn = p => pxToCm(p) / 2.54;
+const ftStr  = ft => { const f=Math.floor(ft), i=Math.round((ft-f)*12); return `${f}' ${i}"`; };
+const snap   = v  => Math.round(v / GRID) * GRID;
+
+let boxes = [], sel = null, drag = null, resize = null;
+let roomCount = 0, furCount = 0;
+
+const canvas = document.getElementById('canvas');
+const tip    = document.getElementById('tip');
+
+// ── TITLE SCREEN ──
+function startNew() {
+  hideTitleScreen();
+  clearAll();
+}
+
+function hideTitleScreen() {
+  const ts = document.getElementById('title-screen');
+  ts.classList.add('ts-out');
+  setTimeout(() => ts.style.display = 'none', 520);
+}
+
+function openTutorial() {
+  document.getElementById('tut-overlay').classList.add('open');
+}
+
+function openTemplates() {
+  document.getElementById('tmpl-overlay').classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+['tut-overlay','tmpl-overlay'].forEach(id => {
+  document.getElementById(id).addEventListener('click', e => {
+    if (e.target.id === id) closeModal(id);
+  });
+});
+
+// ── TEMPLATES ──
+const TEMPLATES = {
+  blank: [],
+  bedroom: [
+    { type:'room',      name:'Bedroom',   x:60,  y:40,  w:300, h:260 },
+    { type:'furniture', name:'Bed',        x:80,  y:60,  w:160, h:100 },
+    { type:'furniture', name:'Wardrobe',   x:260, y:60,  w:80,  h:100 },
+    { type:'furniture', name:'Desk',       x:80,  y:220, w:120, h:60  },
+    { type:'furniture', name:'Nightstand', x:262, y:220, w:60,  h:60  },
+  ],
+  living: [
+    { type:'room',      name:'Living Room',  x:60, y:40, w:320, h:260 },
+    { type:'furniture', name:'Sofa',          x:80, y:60, w:200, h:60  },
+    { type:'furniture', name:'Coffee Table',  x:120,y:140,w:120, h:40  },
+    { type:'furniture', name:'TV Unit',       x:240,y:220,w:100, h:60  },
+  ],
+  kitchen: [
+    { type:'room',      name:'Kitchen',   x:60, y:40, w:280, h:240 },
+    { type:'furniture', name:'Counter',    x:80, y:60, w:240, h:40  },
+    { type:'furniture', name:'Table',      x:100,y:140,w:100, h:80  },
+    { type:'furniture', name:'Fridge',     x:80, y:220,w:40,  h:60  },
+    { type:'furniture', name:'Chair A',    x:220,y:140,w:40,  h:40  },
+    { type:'furniture', name:'Chair B',    x:220,y:200,w:40,  h:40  },
+  ],
+  office: [
+    { type:'room',      name:'Home Office', x:60, y:40, w:280, h:220 },
+    { type:'furniture', name:'Desk',         x:80, y:60, w:160, h:60  },
+    { type:'furniture', name:'Bookshelf',    x:280,y:60, w:40,  h:160 },
+    { type:'furniture', name:'Chair',        x:120,y:160,w:60,  h:60  },
+  ],
+};
+
+function loadTemplate(key) {
+  closeModal('tmpl-overlay');
+  hideTitleScreen();
+  clearSilent();
+  const items = TEMPLATES[key] || [];
+  items.forEach(t => {
+    const b = { id: Date.now() + Math.random(), type: t.type, name: t.name,
+      x: snap(t.x), y: snap(t.y), w: snap(t.w), h: snap(t.h) };
+    if (t.type === 'room') roomCount++; else furCount++;
+    boxes.push(b);
+    mountBox(b);
+  });
+  setStatus(key === 'blank'
+    ? 'BLANK CANVAS READY · ADD A ROOM OR FURNITURE TO BEGIN'
+    : `TEMPLATE LOADED: ${key.replace('living','LIVING ROOM').toUpperCase()} · ${items.length} ITEMS`);
+}
+
+// ── ADD BOX ──
+function addBox(type) {
+  if (type === 'room') roomCount++; else furCount++;
+  const name = type === 'room' ? `Room ${roomCount}` : `Furniture ${furCount}`;
+  const w = type === 'room' ? snap(200) : snap(80);
+  const h = type === 'room' ? snap(160) : snap(60);
+  const x = snap(50 + Math.random() * 160);
+  const y = snap(40 + Math.random() * 100);
+  const b = { id: Date.now() + Math.random(), type, name, x, y, w, h };
+  boxes.push(b);
+  mountBox(b);
+  selectBox(b.id);
+}
+
+// ── MOUNT BOX ──
+function mountBox(b) {
+  const el = document.createElement('div');
+  el.id = `b${b.id}`;
+  el.className = `box ${b.type}`;
+  el.innerHTML = `
+    <div class="box-inner">
+      <button class="del-btn">✕</button>
+      <div class="box-name" data-id="${b.id}">${b.name}</div>
+      <div class="box-size"></div>
+      <div class="dim-w"><span class="dim-w-label"></span></div>
+      <div class="dim-h"><span class="dim-h-label"></span></div>
+      <div class="rh nw"></div><div class="rh ne"></div>
+      <div class="rh sw"></div><div class="rh se"></div>
+    </div>`;
+  setBoxPos(el, b);
+
+  el.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('rh') || e.target.classList.contains('del-btn')) return;
+    if (e.target.classList.contains('box-name') && e.detail === 2) return;
+    e.preventDefault();
+    selectBox(b.id);
+    drag = { id: b.id, mx: e.clientX, my: e.clientY, bx: b.x, by: b.y };
+  });
+
+  el.querySelector('.del-btn').addEventListener('click', e => { e.stopPropagation(); deleteBox(b.id); });
+  el.querySelector('.box-name').addEventListener('dblclick', e => { e.stopPropagation(); startRename(b.id, e.target); });
+
+  el.querySelectorAll('.rh').forEach(h => {
+    h.addEventListener('mousedown', e => {
+      e.preventDefault(); e.stopPropagation();
+      selectBox(b.id);
+      const corner = [...h.classList].find(c => c !== 'rh');
+      resize = { id: b.id, corner, mx: e.clientX, my: e.clientY, bx: b.x, by: b.y, bw: b.w, bh: b.h };
+    });
+  });
+
+  el.addEventListener('mouseenter', e => showTip(e, b.id));
+  el.addEventListener('mousemove', moveTip);
+  el.addEventListener('mouseleave', hideTip);
+  canvas.appendChild(el);
+}
+
+function setBoxPos(el, b) {
+  el.style.left = b.x+'px'; el.style.top  = b.y+'px';
+  el.style.width= b.w+'px'; el.style.height= b.h+'px';
+  const wC = pxToCm(b.w).toFixed(0), hC = pxToCm(b.h).toFixed(0);
+  const sz = el.querySelector('.box-size');    if (sz) sz.textContent = `${wC}cm × ${hC}cm`;
+  const dw = el.querySelector('.dim-w-label'); if (dw) dw.textContent = `${wC}cm`;
+  const dh = el.querySelector('.dim-h-label'); if (dh) dh.textContent = `${hC}cm`;
+}
+
+// ── SELECT / DELETE / CLEAR ──
+function selectBox(id) {
+  document.querySelectorAll('.box').forEach(el => el.classList.remove('selected'));
+  sel = id;
+  if (id) {
+    document.getElementById(`b${id}`)?.classList.add('selected');
+    const b = boxes.find(x => x.id === id);
+    if (b) updateStatus(b);
+  }
+}
+
+function deleteBox(id) {
+  boxes = boxes.filter(b => b.id !== id);
+  document.getElementById(`b${id}`)?.remove();
+  if (sel === id) { sel = null; setStatus('BOX REMOVED'); }
+}
+
+function clearSilent() {
+  boxes = []; canvas.innerHTML = '';
+  sel = null; drag = null; resize = null;
+  roomCount = 0; furCount = 0;
+}
+
+function clearAll() {
+  clearSilent();
+  setStatus('CANVAS CLEARED · USE + ROOM OR + FURNITURE TO BEGIN');
+}
+
+// ── RENAME ──
+function startRename(id, nameEl) {
+  const b = boxes.find(x => x.id === id); if (!b) return;
+  const inp = document.createElement('input');
+  inp.value = b.name;
+  inp.style.cssText = `background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.38);
+    color:inherit;font-family:inherit;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;
+    text-align:center;outline:none;width:${Math.max(b.w-24,50)}px;`;
+  nameEl.replaceWith(inp);
+  inp.focus(); inp.select();
+  const finish = () => {
+    b.name = inp.value.trim() || b.name;
+    const el = document.getElementById(`b${id}`);
+    if (el) {
+      const nn = document.createElement('div');
+      nn.className = 'box-name'; nn.dataset.id = id; nn.textContent = b.name;
+      nn.addEventListener('dblclick', e => { e.stopPropagation(); startRename(id, e.target); });
+      inp.replaceWith(nn);
+    }
+    updateStatus(b);
+  };
+  inp.addEventListener('blur', finish);
+  inp.addEventListener('keydown', e => { if (e.key==='Enter') inp.blur(); e.stopPropagation(); });
+}
+
+// ── STATUS ──
+function updateStatus(b) {
+  setStatus(`${b.name.toUpperCase()} · ${b.w}×${b.h}px · ${pxToCm(b.w).toFixed(1)}×${pxToCm(b.h).toFixed(1)}cm · ${pxToM(b.w).toFixed(2)}×${pxToM(b.h).toFixed(2)}m · ${ftStr(pxToFt(b.w))} × ${ftStr(pxToFt(b.h))}`);
+}
+
+function setStatus(txt) {
+  document.getElementById('status').innerHTML =
+    `<span class="dot r"></span><span class="dot f"></span>${txt}`;
+}
+
+// ── TOOLTIP ──
+function showTip(e, id) {
+  const b = boxes.find(x => x.id === id); if (!b) return;
+  const wCm=pxToCm(b.w), hCm=pxToCm(b.h);
+  const wM=pxToM(b.w),   hM=pxToM(b.h);
+  const wFt=pxToFt(b.w), hFt=pxToFt(b.h);
+  const wIn=pxToIn(b.w), hIn=pxToIn(b.h);
+  tip.innerHTML = `
+    <div class="tip-title">${b.name}</div>
+    <div class="tip-row"><span class="tip-key">pixels</span>       <span class="tip-val">${b.w} × ${b.h} px</span></div>
+    <div class="tip-row"><span class="tip-key">centimeters</span>  <span class="tip-val">${wCm.toFixed(1)} × ${hCm.toFixed(1)} cm</span></div>
+    <div class="tip-row"><span class="tip-key">meters</span>       <span class="tip-val">${wM.toFixed(2)} × ${hM.toFixed(2)} m</span></div>
+    <div class="tip-row"><span class="tip-key">inches</span>       <span class="tip-val">${wIn.toFixed(1)} × ${hIn.toFixed(1)} in</span></div>
+    <div class="tip-row"><span class="tip-key">feet</span>         <span class="tip-val">${wFt.toFixed(2)} × ${hFt.toFixed(2)} ft</span></div>
+    <div class="tip-row"><span class="tip-key">ft + in</span>      <span class="tip-val">${ftStr(wFt)} × ${ftStr(hFt)}</span></div>`;
+  tip.style.display = 'block';
+  moveTip(e);
+}
+
+function moveTip(e) {
+  let x = e.clientX+16, y = e.clientY+16;
+  if (x+200 > window.innerWidth)  x = e.clientX-205;
+  if (y+170 > window.innerHeight) y = e.clientY-170;
+  tip.style.left = x+'px'; tip.style.top = y+'px';
+}
+
+function hideTip() { tip.style.display = 'none'; }
+
+// ── MOUSE ──
+document.addEventListener('mousemove', e => {
+  if (drag) {
+    const b = boxes.find(x => x.id === drag.id); if (!b) return;
+    b.x = snap(drag.bx + e.clientX - drag.mx);
+    b.y = snap(drag.by + e.clientY - drag.my);
+    const el = document.getElementById(`b${b.id}`);
+    if (el) setBoxPos(el, b);
+    updateStatus(b);
+  }
+  if (resize) {
+    const b = boxes.find(x => x.id === resize.id); if (!b) return;
+    const MIN=GRID*3, dx=e.clientX-resize.mx, dy=e.clientY-resize.my;
+    const {corner,bx,by,bw,bh} = resize;
+    if (corner.includes('e')) b.w = Math.max(MIN, snap(bw+dx));
+    if (corner.includes('s')) b.h = Math.max(MIN, snap(bh+dy));
+    if (corner.includes('w')) { b.w = Math.max(MIN, snap(bw-dx)); b.x = bx+bw-b.w; }
+    if (corner.includes('n')) { b.h = Math.max(MIN, snap(bh-dy)); b.y = by+bh-b.h; }
+    const el = document.getElementById(`b${b.id}`);
+    if (el) setBoxPos(el, b);
+    updateStatus(b);
+  }
+});
+
+document.addEventListener('mouseup', () => { drag = null; resize = null; });
+canvas.addEventListener('mousedown', e => { if (e.target === canvas) selectBox(null); });
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeModal('tut-overlay');
+    closeModal('tmpl-overlay');
+    selectBox(null);
+  }
+  if ((e.key === 'Delete' || e.key === 'Backspace') && sel && document.activeElement.tagName !== 'INPUT') {
+    deleteBox(sel);
+  }
+});
+</script>
+</body>
+</html>
